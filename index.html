@@ -47,8 +47,9 @@
 
     function render() {
         const { width: containerWidth } = container.getBoundingClientRect();
-        const COL_NUM = Math.floor(containerWidth / IMG_WIDTH);
-        const GAP_X = (containerWidth - COL_NUM * IMG_WIDTH) / (COL_NUM - 1);
+        let COL_NUM = Math.floor(containerWidth / IMG_WIDTH);
+        COL_NUM = COL_NUM < 1 ? 1 : COL_NUM;
+        const GAP_X = COL_NUM > 1 ? (containerWidth - COL_NUM * IMG_WIDTH) / (COL_NUM - 1) : 10;
         const GAP_Y = GAP_X
         const CUR_TOP_ARR = new Array(COL_NUM).fill(0)
         for (let i = 0; i < IMG_DOM_LIST.length; i++) {
