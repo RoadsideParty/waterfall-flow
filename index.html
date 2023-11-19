@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <div id="waterfall-container"></div>
+</body>
+<script>
+    const container = document.querySelector("#waterfall-container");
+    container.style.position = "relative";
+    const IMG_WIDTH = 200
+    const IMG_NUM = 20
+    const IMG_SRC_LIST = new Array(IMG_NUM).fill(0).map(item => {
+        const randomHeight = Math.floor(Math.random() * 300 + 1) + 200
+        return `https://picsum.photos/200/${randomHeight}`
+    })
+    const IMG_DOM_LIST = []
+
+    async function init() {
+        function _loadImg(src) {
+            return new Promise((resolve) => {
+                const img = new Image()
+                img.style.cssText = `
+                    position:absolute;
+                    opacity:0;
+                    transition:all .3s ease-in-out;
+                `
+                img.src = src;
+                container.append(img);
+                img.onload = () => {
+                    IMG_DOM_LIST.push(img)
+                    resolve(true)
+                }
+                img.onerror = () => {
+                    resolve(true)
+                }
+            })
+        }
+        await Promise.all(IMG_SRC_LIST.map(item => _loadImg(item)))
+        render()
+    }
+
+    function render() {
+        const { width: containerWidth } = container.getBoundingClientRect();
+        const COL_NUM = Math.floor(containerWidth / IMG_WIDTH);
+        const GAP_X = (containerWidth - COL_NUM * IMG_WIDTH) / (COL_NUM - 1);
+        const GAP_Y = GAP_X
+        const CUR_TOP_ARR = new Array(COL_NUM).fill(0)
+        for (let i = 0; i < IMG_DOM_LIST.length; i++) {
+            const img = IMG_DOM_LIST[i]
+            const { minTop, minTopIndex } = CUR_TOP_ARR.reduce((acc, cur, index) => {
+                if (cur < acc.minTop) {
+                    acc.minTop = cur
+                    acc.minTopIndex = index
+                }
+                return acc
+            }, { minTop: CUR_TOP_ARR[0], minTopIndex: 0 })
+            const top = minTop === 0 ? 0 : minTop + GAP_Y
+            CUR_TOP_ARR[minTopIndex] = top === 0 ? img.height : (CUR_TOP_ARR[minTopIndex] + img.height + GAP_Y)
+            img.style.top = top + 'px'
+            img.style.left = minTopIndex * IMG_WIDTH + minTopIndex * GAP_X + "px";
+            img.style.opacity = 1
+        }
+    }
+
+    init(200, 20, IMG_SRC_LIST);
+
+    function debounce(callback, delay) {
+        let timeout = null
+        return (...args) => {
+            if (timeout) {
+                clearTimeout(timeout)
+            }
+            timeout = setTimeout(() => {
+                callback.apply(this, args)
+            }, delay);
+        }
+    }
+    const fn = debounce(render, 500)
+    window.onresize = fn
+</script>
+
+</html>
